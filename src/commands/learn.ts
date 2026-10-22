@@ -64,7 +64,11 @@ export async function runLearn(id: string | undefined, opts: LearnOptions): Prom
     }
     if (!opts.dryRun) written++;
     console.log(
-      c.dim(`     saves about ${f.usd(p.wasteUSD / Math.max(1, p.sessions))} and ${p.avgTurns.toFixed(1)} turns per session`),
+      // A skill call still takes one turn, so the saving is everything before it.
+      c.dim(
+        `     saves about ${f.usd(p.wasteUSD / Math.max(1, p.sessions))} and ` +
+          `${Math.max(0, p.avgTurns - 1).toFixed(1)} turns per session`,
+      ),
     );
     console.log("");
   }

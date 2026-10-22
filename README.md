@@ -7,8 +7,9 @@
 How many times have you paid your agent to figure out how to run your tests?<br>
 Rote finds out, then teaches it once so the next time costs nothing.
 
-<!-- TODO: 5-second demo GIF. Record with `vhs assets/demo.tape` -> assets/demo.gif -->
-<img src="assets/demo.gif" alt="rote stats finding rediscovered commands, then rote learn writing a skill" width="760">
+<img src="assets/demo.svg" alt="rote stats listing commands the agent keeps rediscovering, then rote learn writing a skill" width="820">
+
+<sub>Recorded on the synthetic sample transcripts in <a href="examples/">examples/</a>, not real usage data.</sub>
 
 ```bash
 npx rote-cli stats
@@ -40,14 +41,20 @@ and measures what each session spent exploring and retrying before it got there.
 
 ```
   ◆ rote  muscle memory for coding agents
-  Scanned 54 Claude Code sessions · 2,791 turns · 8 projects in 0.54s
+  Scanned 16 Claude Code sessions · 418 turns · 3 projects in 0.03s
 
-     #  PATTERN                                     PROJECT          SEEN  AVG TURNS   TOKENS   WASTED
-     1  Dev server  wrangler dev · review-system/   beach-website      3×        1.7     1.2M    $0.25
-     2  Run tests   npm test · review-system/       beach-website      4×        1.0     607k    $0.13
+     #  PATTERN                                  PROJECT             SEEN  AVG TURNS   TOKENS     WASTED
+     1  Run tests   vitest run · apps/web/       acme-storefront       6×        3.3     1.8M      $0.93
+     2  Run tests   pytest                       billing-api           5×        2.8     1.1M      $0.60
+     3  Type-check  tsc                          acme-storefront       3×        2.7     711k      $0.35
+     4  Dev server  uvicorn                      billing-api           2×        2.5     322k      $0.15
+     5  Lint        make lint                    edge-gateway          3×        2.0     330k      $0.12
+
+  $2.15  spent figuring out commands your agent had already gotten working before
+         17 rediscoveries · 4.3M tokens · 15m of agent time · 9.4% of $22.99 total agent spend
 ```
 
-<!-- TODO: replace with a screenshot from a heavy user's machine before launch -->
+<sub>Output on the sample transcripts. Your numbers come from your own history.</sub>
 
 **2. `rote show <id>`: see the evidence.** Every number comes from a real session. Rote
 shows you which turns it counted:
@@ -72,13 +79,27 @@ Next session, the agent sees the skill, runs it in one call, and skips the explo
 
 ## Before and after
 
-<!-- TODO: measure on a real repo for launch: same prompt, fresh session, with and without the skill -->
+Measured on real sessions from the author's own Claude Code history: the three times the agent
+(Claude Sonnet 5) re-worked out how to start `wrangler dev` for a Cloudflare Workers project.
 
-|                         | Without rote | With a learned skill |
-| ----------------------- | ------------ | -------------------- |
-| Turns to a working run  | _TBD_        | 1                    |
-| Tokens                  | _TBD_        | _TBD_                |
-| API-equivalent cost     | _TBD_        | _TBD_                |
+|                                | As it happened   | With a learned skill |
+| ------------------------------ | ---------------- | -------------------- |
+| Turns to a running dev server  | 2 per session    | 1                    |
+| Tokens (3 sessions)            | 2.45M            | 1.22M                |
+| API-equivalent cost (3 sessions) | $0.51          | $0.26                |
+
+"With a learned skill" keeps only the final working call, since a skill call replaces the
+exploration but still takes a turn. It's a small project, so the dollar figures are small. The
+saving grows with context size and with how many times the agent has to rediscover something.
+`rote show` prints the exact turns behind numbers like these, so you can check any of them.
+
+### Try it without your own history
+
+```bash
+git clone https://github.com/atharva283/rote-cli && cd rote-cli
+npm install && npm run build
+node dist/cli.js stats --transcripts examples/transcripts
+```
 
 ## Install
 
@@ -169,6 +190,7 @@ git clone https://github.com/atharva283/rote-cli && cd rote-cli
 npm install
 npm test                     # builds, then runs the test suite
 node dist/cli.js stats       # run against your own transcripts
+npm run demo                 # regenerate examples/ and assets/demo.svg
 ```
 
 ## License
