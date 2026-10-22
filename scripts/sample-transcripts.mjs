@@ -104,7 +104,8 @@ export function writeSampleTranscripts(outDir, projectsBase = "/home/dev") {
           : [s],
       );
       clock += between(8, 40) * 3_600_000;
-      const sessionId = `${project.name.slice(0, 4)}0000-0000-4000-8000-${String(si).padStart(12, "0")}`;
+      // The first 8 characters are what `rote show` prints, so keep them unique.
+      const sessionId = `${project.name.slice(0, 4)}${String(si).padStart(4, "0")}-0000-4000-8000-000000000000`;
       const lines = [];
       let context = between(18_000, 30_000);
       let n = 0;

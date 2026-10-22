@@ -17,6 +17,8 @@ npx rote-cli stats
 
 100% local · zero config · zero dependencies · no API key · reads your transcripts in under a second
 
+📖 **New to rote? Read the [Guide](GUIDE.md)**: every command, a 5-minute walkthrough, and FAQ.
+
 </div>
 
 ---
@@ -131,6 +133,9 @@ rote learn [id] [--dry-run]    compile patterns into one-call agent skills
 
 `rote learn` with no id learns every safe pattern in the current project.
 
+See the **[Guide](GUIDE.md#-command-reference)** for every option, with sample output,
+JSON format, environment variables, and error messages.
+
 ## How it counts
 
 Rote errs on the side of **under-counting**. These rules are deliberately strict, so the
@@ -157,10 +162,11 @@ anything. Recipes are filtered before they become skills:
 
 - Destructive steps are stripped, or the pattern is refused: `rm`, `git push`,
   `reset --hard`, `--force`, `DROP TABLE`, `sudo`, `kill`, `curl | sh`, and more.
+- Reset and clean scripts (`npm run seed:reset`, `make clean`, `db:drop`, ...) are refused.
 - Deploys and publishes (`wrangler deploy`, `npm publish`, `terraform apply`, ...) are never
   learned.
 - Recipes that contain anything that looks like a secret (API keys, tokens, `PASSWORD=`) are
-  refused.
+  refused, and secrets are masked as `***` everywhere rote prints a command.
 
 Use `--dry-run` to read every file before it's written. Skills are plain Markdown and a
 shell script, so they're easy to review and commit.

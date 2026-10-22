@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { allAdapters } from "../adapters/index.js";
 import { type Pattern, patternLabel, toSkillSpec } from "../engine/patterns.js";
-import { checkRecipe } from "../engine/safety.js";
+import { checkRecipe, redact } from "../engine/safety.js";
 import { type ScanOptions, findPattern, scan } from "../engine/scan.js";
 import { c } from "../ui/ansi.js";
 import * as f from "../ui/format.js";
@@ -36,7 +36,7 @@ export async function runLearn(id: string | undefined, opts: LearnOptions): Prom
     const verdict = checkRecipe(p.recipe, p.intent);
     const head = `  ${c.bold(`#${p.id} ${patternLabel(p)}`)} ${c.dim(p.tool)} ${c.cyan(p.project.name)}`;
     if (!verdict.ok) {
-      console.log(`${head}\n     ${c.red("✗ skipped")} ${c.dim(`recipe ${verdict.reasons.join(", ")}: ${p.recipe}`)}\n`);
+      console.log(`${head}\n     ${c.red("✗ skipped")} ${c.dim(`recipe ${verdict.reasons.join(", ")}: ${redact(p.recipe)}`)}\n`);
       continue;
     }
     const emitter = emitters.get(p.project.agent);
@@ -66,8 +66,10 @@ export async function runLearn(id: string | undefined, opts: LearnOptions): Prom
     console.log(
       // A skill call still takes one turn, so the saving is everything before it.
       c.dim(
-        `     saves about ${f.usd(p.wasteUSD / Math.max(1, p.sessions))} and ` +
-          `${Math.max(0, p.avgTurns - 1).toFixed(1)} turns per session`,
+        p.wasteUSD > 0
+          ? `     saves about ${f.usd(p.wasteUSD / Math.max(1, p.sessions))} and ` +
+              `${Math.max(0, p.avgTurns - 1).toFixed(1)} turns per session`
+          : "     your agent already gets this right first time; the skill makes it explicit",
       ),
     );
     console.log("");
@@ -76,6 +78,8 @@ export async function runLearn(id: string | undefined, opts: LearnOptions): Prom
   if (opts.dryRun) console.log(c.dim("  Dry run: nothing was written.\n"));
   else if (written) {
     console.log(`  ${c.green("✓")} Learned ${f.plural(written, "skill")}. Claude Code picks them up in new sessions.\n`);
+  } else {
+    console.log(c.dim("  Nothing was written.\n"));
   }
 }
 

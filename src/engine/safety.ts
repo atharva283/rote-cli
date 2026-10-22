@@ -12,6 +12,11 @@ const DESTRUCTIVE: ReadonlyArray<[RegExp, string]> = [
   [/(^|\s)--force(-with-lease)?\b|(^|\s)-f\s+.*\bpush\b|\bpush\s+(.*\s)?-f\b/i, "forces a destructive operation"],
   [/\b(drop|truncate)\s+(table|database|schema)\b|\bdelete\s+from\b/i, "destroys database data"],
   [/\b(migrate\s+reset|db:drop|db:reset|migrate:fresh|flushall|flushdb)\b/i, "resets a database"],
+  // Project scripts and make targets named like `seed:reset` or `clean` usually wipe something.
+  [
+    /\b(?:(?:npm|pnpm|yarn|bun)\s+(?:run\s+)?|make\s+|just\s+|task\s+)[\w:.-]*(?:reset|drop|destroy|nuke|purge|wipe|teardown|clean)\b/i,
+    "runs a reset/clean script",
+  ],
   [/\b(sudo|doas|runas)\b/i, "needs elevated privileges"],
   [/\b(mkfs|diskpart|shutdown|reboot)\b|\bdd\s+if=|\bformat\s+[a-z]:/i, "touches disks or the system"],
   [/\b(kill|pkill|killall|taskkill|Stop-Process)\b/i, "kills processes"],
@@ -30,6 +35,18 @@ const SECRETS: readonly RegExp[] = [
   /\b[A-Z0-9_]*(TOKEN|SECRET|PASSWORD|PASSWD|API_?KEY)[A-Z0-9_]*=\S+/i,
   /--(token|password|api-key|secret)[= ]\S+/i,
 ];
+
+/** Masks anything that looks like a secret, for printing recipes to the terminal or JSON. */
+export function redact(text: string): string {
+  return SECRETS.reduce(
+    (s, re) =>
+      s.replace(new RegExp(re.source, `${re.flags.replace("g", "")}g`), (m) => {
+        const cut = m.search(/[= ]/);
+        return cut > 0 ? `${m.slice(0, cut + 1)}***` : "***";
+      }),
+    text,
+  );
+}
 
 /** Decides whether a recipe is safe to hand to an agent as a one-call skill. */
 export function checkRecipe(recipe: string, intent: Intent): SafetyVerdict {

@@ -1,10 +1,11 @@
 import { patternLabel } from "../engine/patterns.js";
 import { turnCost } from "../engine/pricing.js";
-import { checkRecipe } from "../engine/safety.js";
+import { checkRecipe, redact } from "../engine/safety.js";
 import { type ScanOptions, findPattern, scan } from "../engine/scan.js";
 import type { ToolCall } from "../types.js";
 import { c, terminalWidth, truncate } from "../ui/ansi.js";
 import * as f from "../ui/format.js";
+import { foldWorktree, isAbsolute, normPath, relativeTo } from "../util/paths.js";
 
 const MAX_EPISODES = 8;
 
@@ -37,8 +38,8 @@ export async function runShow(id: string, opts: ScanOptions): Promise<void> {
     );
     for (const turn of e.window) {
       for (const call of turn.calls) {
-        const text = describeCall(call);
-        if (text) out.push(`     ${statusMark(call)} ${truncate(text, lineW)}`);
+        const text = describeCall(call, p.project.root);
+        if (text) out.push(`     ${statusMark(call)} ${truncate(redact(text), lineW)}`);
       }
     }
     out.push("");
@@ -47,7 +48,7 @@ export async function runShow(id: string, opts: ScanOptions): Promise<void> {
 
   const verdict = checkRecipe(p.recipe, p.intent);
   out.push(`  ${c.bold("Recipe")}${p.workdir ? c.dim(` (runs in ${p.workdir}/)`) : ""}`);
-  out.push(`     ${p.recipe}`);
+  out.push(`     ${redact(p.recipe)}`);
   out.push("");
   out.push(
     verdict.ok
@@ -58,14 +59,18 @@ export async function runShow(id: string, opts: ScanOptions): Promise<void> {
   console.log(out.join("\n"));
 }
 
-function describeCall(call: ToolCall): string {
+function describeCall(call: ToolCall, root: string): string {
   switch (call.kind) {
     case "shell":
       return (call.command ?? "").replace(/\s*\n\s*/g, " ⏎ ");
     case "neutral":
       return "";
-    default:
-      return `${call.name}${call.target ? ` ${call.target.replace(/\\/g, "/").split("/").slice(-2).join("/")}` : ""}`;
+    default: {
+      if (!call.target) return call.name;
+      // Show files relative to the project, e.g. `apps/web/package.json`; globs as written.
+      const rel = isAbsolute(call.target) ? relativeTo(root, foldWorktree(normPath(call.target))) : null;
+      return `${call.name} ${rel || call.target.replace(/\\/g, "/")}`;
+    }
   }
 }
 

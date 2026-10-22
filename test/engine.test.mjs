@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { classify } from "../dist/engine/intents.js";
 import { rateFor, turnCost } from "../dist/engine/pricing.js";
-import { checkRecipe } from "../dist/engine/safety.js";
+import { checkRecipe, redact } from "../dist/engine/safety.js";
 import { coreTokens, splitCommand, tokenize } from "../dist/engine/shell.js";
 import { foldWorktree, normPath, relativeTo, resolvePath } from "../dist/util/paths.js";
 
@@ -56,6 +56,15 @@ test("checkRecipe blocks destructive and outward-facing commands", () => {
   assert.equal(checkRecipe("API_KEY=abc123 npm test", "test").ok, false);
   assert.equal(checkRecipe("npx wrangler deploy", "deploy").ok, false);
   assert.equal(checkRecipe("docker run --rm app", "script").ok, true);
+  assert.equal(checkRecipe("npm run seed:reset", "script").ok, false);
+  assert.equal(checkRecipe("make clean", "build").ok, false);
+  assert.equal(checkRecipe("uv run pytest tests/test_reset.py", "test").ok, true);
+});
+
+test("redact masks secrets but keeps the command readable", () => {
+  assert.equal(redact("API_TOKEN=abc123secret npm run sync"), "API_TOKEN=*** npm run sync");
+  assert.equal(redact("curl --token ghp_abcdefghijklmnopqrstuvwxyz0123 x"), "curl --token *** x");
+  assert.equal(redact("npm test"), "npm test");
 });
 
 test("pricing matches Anthropic list prices", () => {

@@ -1,4 +1,5 @@
 import { patternLabel, type Pattern } from "../engine/patterns.js";
+import { redact } from "../engine/safety.js";
 import { type ScanOptions, type ScanResult, scan } from "../engine/scan.js";
 import { c, pad, terminalWidth, truncate, width } from "../ui/ansi.js";
 import * as f from "../ui/format.js";
@@ -63,7 +64,7 @@ export function renderStats(r: ScanResult, opts: Pick<StatsOptions, "limit" | "a
     { usd: 0, tokens: 0, ms: 0, count: 0 },
   );
   const share = r.totalUSD > 0 ? (waste.usd / r.totalUSD) * 100 : 0;
-  const top = shown[0]!;
+  const next = shown.find((p) => !p.learned);
 
   out.push("");
   out.push(c.dim(`  ${"─".repeat(Math.min(terminalWidth() - 4, 96))}`));
@@ -78,8 +79,12 @@ export function renderStats(r: ScanResult, opts: Pick<StatsOptions, "limit" | "a
     ),
   );
   out.push("");
-  out.push(`  ${c.cyan("→")} ${c.bold(`rote learn ${top.id}`)}   ${c.dim("teach it once; next time it takes one call and no exploring")}`);
-  out.push(`  ${c.cyan("→")} ${c.bold(`rote show ${top.id}`)}    ${c.dim("see the sessions behind a pattern")}`);
+  if (next) {
+    out.push(`  ${c.cyan("→")} ${c.bold(`rote learn ${next.id}`)}   ${c.dim("teach it once; next time it takes one call and no exploring")}`);
+    out.push(`  ${c.cyan("→")} ${c.bold(`rote show ${next.id}`)}    ${c.dim("see the sessions behind a pattern")}`);
+  } else {
+    out.push(`  ${c.green("✓")} Every pattern listed here is learned. ${c.dim("Totals include sessions from before that.")}`);
+  }
   out.push("");
   out.push(c.dim("  Costs are API-equivalent at list prices. Waste only counts turns spent exploring or retrying"));
   out.push(c.dim("  right before a command worked, so the real number is likely higher."));
@@ -152,7 +157,7 @@ function toJson(r: ScanResult) {
       intent: p.intent,
       tool: p.tool,
       workdir: p.workdir,
-      recipe: p.recipe,
+      recipe: redact(p.recipe),
       sessions: p.sessions,
       runs: p.runs,
       rediscoveries: p.rediscoveries,
