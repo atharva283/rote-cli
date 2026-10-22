@@ -1,0 +1,47 @@
+{
+  "name": "rote-cli",
+  "version": "0.1.0",
+  "description": "Muscle memory for coding agents. Finds the commands your agent keeps paying to rediscover and compiles them into zero-exploration skills.",
+  "keywords": [
+    "claude-code",
+    "claude",
+    "ai-agents",
+    "coding-agent",
+    "skills",
+    "tokens",
+    "cost",
+    "cli",
+    "developer-tools"
+  ],
+  "author": "Atharva",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/atharva283/rote-cli.git"
+  },
+  "homepage": "https://github.com/atharva283/rote-cli#readme",
+  "bugs": "https://github.com/atharva283/rote-cli/issues",
+  "type": "module",
+  "bin": {
+    "rote": "dist/cli.js",
+    "rote-cli": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.17"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "test": "npm run build && node --test \"test/**/*.test.mjs\"",
+    "prepublishOnly": "npm test"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2"
+  }
+}
